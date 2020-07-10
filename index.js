@@ -1,5 +1,7 @@
 class Car {
     constructor(name, image, imageAngle, steering, acceleration, breake, maxSpeed, size, accKey, breakeKey, turnLeftKey, turnRightKey) {
+        this.carDOM = null;
+        this.dashBoradDOM = null;
         this.name = name;
         this.image = image;
         this.imageAngle = imageAngle;
@@ -16,34 +18,43 @@ class Car {
         this.breakeKey = breakeKey;
         this.turnLeftKey = turnLeftKey;
         this.turnRightKey = turnRightKey;
+        this.accPressed = false;
+        this.breakePressed = false;
+        this.leftPressed = false;
+        this.rightPressed = false;
     }
     
-    getCar() {
-        return document.getElementById(this.name);
+    accelerate(direction) {
+        console.log(Math.abs(this.speed));
+        console.log(Math.abs(this.maxSpeed * direction));
+
+        var moveDirection = Math.sign(this.speed);
+        var moveSpeed = Math.abs(this.speed);
+
+        this.speed = this.speed + this.acceleration * direction;
+        if (this.speed > this.maxSpeed * direction) {
+            this.speed = this.maxSpeed * direction;
+        }
     }
 
-    accelerate() {
-        this.speed = this.speed + this.acceleration;
-        if (this.speed > this.maxSpeed) {
-            this.speed = this.maxSpeed;
+    friction() {
+        //this.speed = this.speed * 0.99;
+        if (this.speed < this.acceleration/5) {
+            this.speed = 0;
         }
     }
 
     breake() {
-        this.speed = this.speed - this.acceleration/2;
-        if (this.speed < -this.maxSpeed/2) {
-            this.speed = -this.maxSpeed/2;
-        }
+        this.accelerate(-this.carBreake);
     }
 
     spriteRotate(angle)
     {
-        var carDOM = this.getCar();
-        carDOM.style.webkitTransform = 'rotate('+angle+'deg)'; 
-        carDOM.style.mozTransform    = 'rotate('+angle+'deg)'; 
-        carDOM.style.msTransform     = 'rotate('+angle+'deg)'; 
-        carDOM.style.oTransform      = 'rotate('+angle+'deg)'; 
-        carDOM.style.transform       = 'rotate('+angle+'deg)'; 
+        this.carDOM.style.webkitTransform = 'rotate('+angle+'deg)'; 
+        this.carDOM.style.mozTransform    = 'rotate('+angle+'deg)'; 
+        this.carDOM.style.msTransform     = 'rotate('+angle+'deg)'; 
+        this.carDOM.style.oTransform      = 'rotate('+angle+'deg)'; 
+        this.carDOM.style.transform       = 'rotate('+angle+'deg)'; 
     }
 
     wrapAngle(angle) {
@@ -55,7 +66,8 @@ class Car {
     turn(direction) {
         if (this.speed !== 0)
         {
-            this.direction = this.direction + direction*this.steeringSpeed;
+            var relativeSpeed = this.speed / this.maxSpeed;
+            this.direction = this.direction + direction*this.steeringSpeed*relativeSpeed;
             this.direction = this.wrapAngle(this.direction);
         }
     }
@@ -66,89 +78,124 @@ class Car {
         this.positionX = this.positionX + xInc;
         this.positionY = this.positionY + yInc;
         
-        var moveingDirection = Math.atan(xInc/yInc)/Math.PI*180;
-
-        var carDOM = this.getCar();
-
-        console.log(moveingDirection);
-        console.log(this.direction);
-
-        carDOM.style.left = (window.innerWidth-this.size)/2-this.positionX+"px";
-        carDOM.style.top = (window.innerHeight-this.size)/2-this.positionY+"px";
-        //this.update();
+        this.carDOM.style.left = (window.innerWidth-this.size)/2-this.positionX+"px";
+        this.carDOM.style.top = (window.innerHeight-this.size)/2-this.positionY+"px";
     }
 
-    control (accKey, breakeKey, turnLeftKey, turnRightKey, functions) {
+    control (accKey, breakeKey, turnLeftKey, turnRightKey, myCar) {
 
         document.addEventListener('keydown', function(event) {
             if (event.code == accKey) {
-                functions.accelerate();
-                functions.update();
+                myCar.accPressed = true;
             }
         });
         document.addEventListener('keydown', function(event) {
             if (event.code == breakeKey) {
-                functions.breake();
-                functions.update();
+                myCar.breakePressed = true;
             }
         });
         document.addEventListener('keydown', function(event) {
             if (event.code == turnLeftKey) {
-                functions.turn(-1);
-                functions.update();
+                myCar.leftPressed = true;
             }
         });
         document.addEventListener('keydown', function(event) {
             if (event.code == turnRightKey) {
-                functions.turn(1);
-                functions.update();
+                myCar.rightPressed = true;
             }
         });
-        
-        /* itt valamiért nem működik, ezért be kelett tennem mindegyik gombnyomáshoz.
-            Meg amúgy is mé nem megy az autóka, ha nem nyomom a gombot!?!??!
-            Na meg valahová kellene nekem egy lassulás, ha nem nyomja a gázt
-            a játékos, akkor lassan álljon meg az autó */
+        document.addEventListener('keyup', function(event) {
+            if (event.code == accKey) {
+                myCar.accPressed = false;
+            }
+        });
+        document.addEventListener('keyup', function(event) {
+            if (event.code == breakeKey) {
+                myCar.breakePressed = false;
+            }
+        });
+        document.addEventListener('keyup', function(event) {
+            if (event.code == turnLeftKey) {
+                myCar.leftPressed = false;
+            }
+        });
+        document.addEventListener('keyup', function(event) {
+            if (event.code == turnRightKey) {
+                myCar.rightPressed = false;
+            }
+        });
     }
 
     update(){
+        this.friction();
+        if (this.accPressed) {
+            this.accelerate(1);
+        } else
+        if (this.breakePressed) {
+            this.breake();
+        }
+        if (this.leftPressed) {
+            this.turn(-1);
+        }
+        if (this.rightPressed) {
+            this.turn(1);
+        }
         this.setPosition();
         this.spriteRotate(this.direction);
-        console.log('refreshed');
-        //gameloop();
+        this.dashBoradDOM.innerHTML = this.speed;
+    }
+
+    createCar(){
+        this.carDOM = document.createElement("div");
+        this.carDOM.classList.add("car");
+        this.carDOM.id = this.name;
+        this.carDOM.style.height = this.size+"px";
+        this.carDOM.style.width = this.size+"px";
+        this.carDOM.style.position = "fixed";
+        this.carDOM.style.backgroundImage = "url("+this.image+")";
+        this.carDOM.style.backgroundPosition = "center center";
+        this.carDOM.style.backgroundSize = "contain";
+        this.carDOM.style.backgroundRepeat = "no-repeat";
+        this.carDOM.style.top = (window.innerHeight-this.size)/2+"px";
+        this.carDOM.style.left = (window.innerWidth-this.size)/2+"px";
+        document.body.appendChild(this.carDOM);
+    }
+
+    crateDashBoard() {
+        this.dashBoradDOM = document.createElement("div");
+        this.dashBoradDOM.classList.add("dashBoard");
+        this.dashBoradDOM.id = "DB-"+this.name;
+        this.dashBoradDOM.style.height = 20+"px";
+        this.dashBoradDOM.style.width = 50+"px";
+        document.body.appendChild(this.dashBoradDOM);
     }
 
     create() {
-        if (!this.getCar())
+        if (!this.carDOM)
         {
-            var carDOM = document.createElement("div");
-            carDOM.classList.add(this.name);
-            carDOM.id = this.name;
-            carDOM.style.height = this.size+"px";
-            carDOM.style.width = this.size+"px";
-            carDOM.style.position = "fixed";
-            carDOM.style.backgroundImage = "url("+this.image+")";
-            carDOM.style.backgroundPosition = "center center";
-            carDOM.style.backgroundSize = "contain";
-            carDOM.style.backgroundRepeat = "no-repeat";
-            document.body.appendChild(carDOM);
-            carDOM.style.top = (window.innerHeight-this.size)/2+"px";
-            carDOM.style.left = (window.innerWidth-this.size)/2+"px";
-            this.spriteRotate(-this.imageAngle);
+            this.createCar();
+            this.crateDashBoard();
             this.control(this.accKey, this.breakeKey, this.turnLeftKey, this.turnRightKey, this);
         }
     }
 }
 
-var car1 = new Car("lambo", "cars/car2.png", 180, 3, 0.2, 0.5, 5, 85, "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight");
-var car2 = new Car("merci", "cars/car1.png", 180, 3, 0.3, 0.7, 6, 90, "KeyW", "KeyS", "KeyA", "KeyD");
+var cars = [
+    new Car("lambo", "cars/car2.png", 180, 1, 0.003, 0.5, 1, 85, "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"),
+    new Car("merci", "cars/car1.png", 180, 1, 0.005, 0.6, 1.3, 90, "KeyW", "KeyS", "KeyA", "KeyD")
+];
 
-car1.create();
-car2.create();
+for (var i = 0; i <cars.length; i++) {
+    cars[i].create();
+}
 
 function gameloop()
 {
-    car1.update();
+    for (var i = 0; i <cars.length; i++) {
+        cars[i].update();
+    }
 }
 
-//gameloop();
+setInterval(function() {
+    gameloop();
+}, 1);
