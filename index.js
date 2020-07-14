@@ -1,44 +1,45 @@
-var cars = [
+let racetrack = new raceTrack('field/2420706.jpg');
+racetrack.create();
+
+const cars = [
   new Car(
-    "lambo",
-    "cars/car2.png",
-    180,
-    1.5,
-    0.005,
-    0.02,
-    2,
-    45,
-    "ArrowUp",
-    "ArrowDown",
-    "ArrowLeft",
-    "ArrowRight"
+    racetrack.raceTrackDOM, //Track DOM
+    'lambo', //Name
+    'cars/car2.png', //Image
+    180, //Initial
+    1.55, //Rotational speed
+    0.005, //Acceleration
+    0.02, //Breake deceleration
+    2, //maxSpeed
+    45, //Size
+    'ArrowUp', //Acceleration key
+    'ArrowDown', //Breake key
+    'ArrowLeft', //Turn left key
+    'ArrowRight', //Turn right key
   ),
   new Car(
-    "merci",
-    "cars/car1.png",
-    180,
-    1.5,
-    0.007,
-    0.02,
-    2.3,
-    48,
-    "KeyW",
-    "KeyS",
-    "KeyA",
-    "KeyD"
+    racetrack.raceTrackDOM, //Track DOM
+    'merci', //Name
+    'cars/car1.png', //Image
+    180, //Initial
+    1.4, //Rotational speed
+    0.008, //Acceleration
+    0.025, //Breake deceleration
+    2.4, //maxSpeed
+    48, //Size
+    'KeyW', //Acceleration key
+    'KeyS', //Breake key
+    'KeyA', //Turn left key
+    'KeyD', //Turn right key
   ),
 ];
 
-var racetrack = new raceTrack("field/2420706.jpg");
-
-racetrack.create();
-
-for (var i = 0; i < cars.length; i++) {
+for (let i = 0; i < cars.length; i++) {
   cars[i].create();
 }
 
 function gameloop() {
-  for (var i = 0; i < cars.length; i++) {
+  for (let i = 0; i < cars.length; i++) {
     cars[i].update();
   }
 }

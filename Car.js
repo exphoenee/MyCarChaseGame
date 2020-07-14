@@ -1,5 +1,6 @@
 class Car {
   constructor(
+    raceTrack,
     name,
     image,
     imageAngle,
@@ -11,10 +12,17 @@ class Car {
     accKey,
     breakeKey,
     turnLeftKey,
-    turnRightKey
+    turnRightKey,
   ) {
+    this.trackDOM = raceTrack;
+    this.raceTrackHeight = raceTrack.clientHeight;
+    this.raceTrackWidth = raceTrack.clientWidth;
+    this.trackY = this.trackDOM.offsetTop;
+    this.trackX = this.trackDOM.offsetLeft;
     this.carDOM = null;
     this.dashBoradDOM = null;
+    this.hitBox = null;
+    this.hitBoxChoords = [];
     this.name = name;
     this.image = image;
     this.imageAngle = imageAngle;
@@ -57,12 +65,12 @@ class Car {
     }
   }
 
-  spriteRotate(angle) {
-    this.carDOM.style.webkitTransform = "rotate(" + angle + "deg)";
-    this.carDOM.style.mozTransform = "rotate(" + angle + "deg)";
-    this.carDOM.style.msTransform = "rotate(" + angle + "deg)";
-    this.carDOM.style.oTransform = "rotate(" + angle + "deg)";
-    this.carDOM.style.transform = "rotate(" + angle + "deg)";
+  spriteRotate() {
+    this.carDOM.style.webkitTransform = 'rotate(' + this.direction + 'deg)';
+    this.carDOM.style.mozTransform = 'rotate(' + this.direction + 'deg)';
+    this.carDOM.style.msTransform = 'rotate(' + this.direction + 'deg)';
+    this.carDOM.style.oTransform = 'rotate(' + this.direction + 'deg)';
+    this.carDOM.style.transform = 'rotate(' + this.direction + 'deg)';
   }
 
   wrapAngle(angle) {
@@ -84,28 +92,75 @@ class Car {
   }
 
   setPosition() {
+    this.trackX = this.trackDOM.offsetLeft;
+    this.trackY = this.trackDOM.offsetTop;
     var xInc = this.speed * Math.cos((this.direction / 180) * Math.PI);
     var yInc = this.speed * Math.sin((this.direction / 180) * Math.PI);
     this.positionX = this.positionX + xInc;
     this.positionY = this.positionY + yInc;
 
     this.carDOM.style.left =
-      (window.innerWidth - this.size) / 2 - this.positionX + "px";
+      (this.raceTrackWidth - this.size) / 2 -
+      this.positionX +
+      this.trackX +
+      'px';
     this.carDOM.style.top =
-      (window.innerHeight - this.size) / 2 - this.positionY + "px";
+      (this.raceTrackHeight - this.size) / 2 -
+      this.positionY +
+      this.trackY +
+      'px';
   }
+
+  createHitBox() {
+    let hitBoxNames = [
+      'hitbox-topleft',
+      'hitbox-topright',
+      'hitbox-bottomleft',
+      'hitbox-bottomright',
+    ];
+
+    hitBoxNames.forEach((key, i) => {
+      this.hitBox = document.createElement('div');
+      this.hitBox.classList.add(hitBoxNames[i]);
+      this.hitBox.id = hitBoxNames[i] + '-' + this.name;
+      this.hitBox.style.height = 5 + 'px';
+      this.hitBox.style.width = 5 + 'px';
+      this.hitBox.style.backgroundColor = 'white';
+      document.getElementById(this.name).appendChild(this.hitBox);
+    });
+  }
+
+  calculatehitBox(showHitBox) {
+    let hitBoxWidth = this.size / 3;
+    let hitBoxHeight = this.size / 2;
+
+    let carCoordsX = this.positionX + this.trackX + hitBoxWidth;
+    let carCoordsY = this.positionY + this.trackY + hitBoxHeight;
+
+    this.hitBoxCoords;
+
+    this.carDOM.style.webkitTransform = 'rotate(' + this.direction + 'deg)';
+    this.carDOM.style.mozTransform = 'rotate(' + this.direction + 'deg)';
+    this.carDOM.style.msTransform = 'rotate(' + this.direction + 'deg)';
+    this.carDOM.style.oTransform = 'rotate(' + this.direction + 'deg)';
+    this.carDOM.style.transform = 'rotate(' + this.direction + 'deg)';
+
+    this.hitBoxCoords = [];
+  }
+
+  collisionDetection() {}
 
   control() {
     /* itt az if-en belül miért nem férek hozzá az objektumomhoz? */
     var keyPressed = this.controlPressed;
 
     this.controlKeys.forEach((key, i) => {
-      document.addEventListener("keydown", (event) => {
+      document.addEventListener('keydown', (event) => {
         if (event.code == key) {
           keyPressed[i] = true;
         }
       });
-      document.addEventListener("keyup", (event) => {
+      document.addEventListener('keyup', (event) => {
         if (event.code == key) {
           keyPressed[i] = false;
         }
@@ -114,7 +169,7 @@ class Car {
     this.controlPressed = keyPressed;
   }
 
-  update() {
+  updateCar() {
     this.controlPressed[0]
       ? this.accelerate()
       : this.controlPressed[1]
@@ -129,33 +184,51 @@ class Car {
     }
 
     this.setPosition();
-    this.spriteRotate(this.direction);
-    this.dashBoradDOM.innerHTML = this.speed;
+    this.spriteRotate();
+    this.calculatehitBox(true);
+  }
+
+  updateDashboard() {
+    this.dashBoradDOM.innerHTML = 'Speed:' + Math.round((this.speed / 2) * 220);
+    this.dashBoradDOM.innerHTML +=
+      '\r' + 'Direction:' + Math.round(this.direction);
+    this.dashBoradDOM.innerHTML += '\r' + 'PosX: ' + Math.round(this.positionX);
+    this.dashBoradDOM.innerHTML += '\r' + 'PosY: ' + Math.round(this.positionY);
+  }
+
+  update() {
+    this.updateCar();
+    this.updateDashboard();
   }
 
   createCar() {
-    this.carDOM = document.createElement("div");
-    this.carDOM.classList.add("car");
+    this.carDOM = document.createElement('div');
+
+    /* a facé nem érem el a racetrack DOM-ját az objektumon keresztül. */
+    //this.trackDOM = document.getElementById('racetrack');
+
+    this.carDOM.classList.add('car');
     this.carDOM.id = this.name;
-    this.carDOM.style.height = this.size + "px";
-    this.carDOM.style.width = this.size + "px";
-    this.carDOM.style.position = "fixed";
-    this.carDOM.style.backgroundImage = "url(" + this.image + ")";
-    this.carDOM.style.backgroundPosition = "center center";
-    this.carDOM.style.backgroundSize = "contain";
-    this.carDOM.style.backgroundRepeat = "no-repeat";
-    this.carDOM.style.top = (window.innerHeight - this.size) / 2 + "px";
-    this.carDOM.style.left = (window.innerWidth - this.size) / 2 + "px";
-    document.body.appendChild(this.carDOM);
+    this.carDOM.style.height = this.size + 'px';
+    this.carDOM.style.width = this.size + 'px';
+    this.carDOM.style.position = 'fixed';
+    this.carDOM.style.backgroundImage = 'url(' + this.image + ')';
+    this.carDOM.style.backgroundPosition = 'center center';
+    this.carDOM.style.backgroundSize = 'contain';
+    this.carDOM.style.backgroundRepeat = 'no-repeat';
+    document.getElementById('racetrack').appendChild(this.carDOM);
   }
 
   crateDashBoard() {
-    this.dashBoradDOM = document.createElement("div");
-    this.dashBoradDOM.classList.add("dashBoard");
-    this.dashBoradDOM.id = "DB-" + this.name;
-    this.dashBoradDOM.style.height = 20 + "px";
-    this.dashBoradDOM.style.width = 50 + "px";
-    document.body.appendChild(this.dashBoradDOM);
+    this.dashBoradDOM = document.createElement('div');
+    this.dashBoradDOM.classList.add('dashBoard');
+    this.dashBoradDOM.id = 'DB-' + this.name;
+    this.dashBoradDOM.style.height = 20 + 'px';
+    this.dashBoradDOM.style.color = 'white';
+    this.dashBoradDOM.style.paddingLeft = 5 + 'px';
+    this.dashBoradDOM.style.paddingTop = 5 + 'px';
+    //this.dashBoradDOM.style.width = 50 + 'px';
+    document.getElementById('racetrack').appendChild(this.dashBoradDOM);
   }
 
   create() {
@@ -163,6 +236,7 @@ class Car {
       this.createCar();
       this.crateDashBoard();
       this.control();
+      this.createHitBox();
     }
   }
 }
